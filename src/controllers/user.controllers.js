@@ -4,6 +4,7 @@ import {User} from "../models/user.model.js"
 import {upload} from "../middlewares/multer.middlewares.js"
 import {uploadOnCloudinary} from "../utilis/cloudinary.js"
 import { ApiResponse } from "../utilis/ApiRespons.js"
+import jwt from "jsonwebtoken"
 
 const generateAccessAndRefereshToken = async(userId) => {
     try{
@@ -186,10 +187,59 @@ const logoutUser = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, {}, "User logged out"))
 })
 
+const refereshAccessToken = asyncHandler(async(req, res) => {
+    try {
+        const incomingRefereshToken = req.cookies.refereshToken || req.body.refereshToken
+    
+        if (!incomingRefereshToken) {
+            throw new ApiError(401, "Unauthorized request")
+        }
+    
+        const decodedToken = jwt.verify(
+            incomingRefereshToken,
+            process.env.REFERESH_TOKEN_SECRET
+        )
+    
+        const user = await User.findById(decodedToken?._id)
+    
+        if (!user) {
+            throw new ApiError (401, "Invalid referesh Token")
+        }
+    
+        if(incomingRefereshToken !== user?.refereshToken) {
+            throw new ApiError(401, "Referesh token is expire or used")
+        }
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        const {accessToken, newRefereshToken} = await generateAccessAndRefereshToken(user._id)
+    
+        return res
+        .status(200)
+        .cookies("accessToken", accessToken, options)
+        .cookies("refereshToken", newRefereshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {accessToken, refereshToken: newRefereshToken},
+                "Access Token refereshd"
+            )
+        )
+    } catch (error) {
 
+        throw new ApiError (401, error?.message || "Invalid referesh token")
+        
+    }
+
+
+}) 
 
 export { 
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refereshAccessToken
 }; 
