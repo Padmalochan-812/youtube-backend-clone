@@ -43,8 +43,8 @@ router.route("/change-password").post(veryfyJWT, changeCurrentPassword)
 router.route("/curren-user").get(getCurrentUser)
 router.route("/update-account").patch(updateAccountDetails)
 
-router.route("/avatar").patch(veryfyJWT, upload.single("/avatar"), updateUserAvatar)
-router.route("/cover-image").patch(veryfyJWT, upload.single("/coverImage"), updateUserCoverImage)
+router.route("/avatar").patch(veryfyJWT, upload.single("avatar"), updateUserAvatar)
+router.route("/cover-image").patch(veryfyJWT, upload.single("coverImage"), updateUserCoverImage)
 
 router.route("/c/:username").get(veryfyJWT, getUserChannelProfile)
 router.route("/history").get(veryfyJWT, getWatchHistory)
