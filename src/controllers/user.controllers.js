@@ -152,7 +152,7 @@ const loginUser = asyncHandler( async (req, res ) => {
         new ApiResponse(
             200,
             {
-                nser: loggedInUser.accessToken, refereshToken
+                loggedInUser
             },
             "User logged In Successfully"
         )
@@ -164,8 +164,8 @@ const logoutUser = asyncHandler(async(req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refereshToken: undefined
+            $unset: {
+                refereshToken: 1
             }
         },
         {
@@ -203,7 +203,7 @@ const refereshAccessToken = asyncHandler(async(req, res) => {
         if (!user) {
             throw new ApiError (401, "Invalid referesh Token")
         }
-    
+
         if(incomingRefereshToken !== user?.refereshToken) {
             throw new ApiError(401, "Referesh token is expire or used")
         }
@@ -217,8 +217,8 @@ const refereshAccessToken = asyncHandler(async(req, res) => {
     
         return res
         .status(200)
-        .cookies("accessToken", accessToken, options)
-        .cookies("refereshToken", newRefereshToken, options)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refereshToken", newRefereshToken, options)
         .json(
             new ApiResponse(
                 200,
@@ -238,7 +238,7 @@ const refereshAccessToken = asyncHandler(async(req, res) => {
 const changeCurrentPassword = asyncHandler(async(req, res) => {
     const {oldPassword, newPassword} = req.body
 
-    const user = await user.findById(req.user._id)
+    const user = await User.findById(req.user._id)
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
     if (!isPasswordCorrect) {
@@ -255,28 +255,35 @@ const changeCurrentPassword = asyncHandler(async(req, res) => {
 })
 
 const getCurrentUser = asyncHandler(async(req, res) => {
+    const user = req.user
     return res
-    .status(200)
-    .json(200, req.user, "Current user fetched successfully")
+    .status (200)
+    .json(
+        new ApiResponse(200, user, "Current User Details fetched")
+    )
+
 })
 
 const updateAccountDetails = asyncHandler(async(req, res) => {
     const {fulName, email} = req.body
-
+    
     if (!fulName || !email) {
         throw new ApiError (400, "All fields are required ")
     }
 
     const user = await User.findByIdAndUpdate(
         req.user?._id,
+
         {
             $set: {
                 fulName,
                 email: email  //two types aree correct 
             }
         },
-        {new: true}
-    ).select("-password")
+        { returnDocument: "after" }
+    ).select("-password -refereshToken")
+
+    
 
     return res
     .status(200)
@@ -303,8 +310,8 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
                 avatar: avatar.url
             }
         },
-        {new: true}
-    ).select("-password")
+        { returnDocument: "after" }
+    ).select("-password -refereshToken")
 
     return res
     .status (200)

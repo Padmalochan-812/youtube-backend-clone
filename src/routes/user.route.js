@@ -31,7 +31,7 @@ router.route("/register").post(
         }
     ]),
     registerUser
-    )
+)
 
 router.route("/login").post(loginUser)
 
@@ -40,8 +40,8 @@ router.route("/login").post(loginUser)
 router.route("/logout").post(veryfyJWT, logoutUser)
 router.route("/referesh-token").post(refereshAccessToken)
 router.route("/change-password").post(veryfyJWT, changeCurrentPassword)
-router.route("/curren-user").get(getCurrentUser)
-router.route("/update-account").patch(updateAccountDetails)
+router.route("/current-user").get(veryfyJWT, getCurrentUser)
+router.route("/update-account").patch(veryfyJWT, updateAccountDetails)
 
 router.route("/avatar").patch(veryfyJWT, upload.single("avatar"), updateUserAvatar)
 router.route("/cover-image").patch(veryfyJWT, upload.single("coverImage"), updateUserCoverImage)
