@@ -42,7 +42,7 @@ const userSchema = new Schema (
             type: String,
             require: [true, "Password is required"]
         },
-        refereshToken: {
+        refreshToken: {
             type: String
         }
     },
@@ -83,9 +83,9 @@ return jwt.sign(
             _id: this._id,
             
         },
-        process.env.REFERESH_TOKEN_SECRET,
+        process.env.REFRESH_TOKEN_SECRET,
         {
-            expiresIn: process.env.REFERESH_TOKEN_EXPIREY
+            expiresIn: process.env.REFRESH_TOKEN_EXPIREY
         }
     )
 }
