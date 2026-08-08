@@ -10,7 +10,28 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortType = req.query.sortType === "asc" ? 1 : -1;
+    const filter = {};
     
+    if (userId) filter.owner = userId;
+    if (query) filter.title = { $regex: query, $options: "i" };
+
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+
+    const videos = await Video.find(filter)
+        .sort({ [sortBy]: sortType})
+        .skip((pageNum - 1) * limitNum) 
+        .limit(limitNum)
+
+    if (!videos) {
+        throw new ApiError (400, "There is no such videos..")
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, videos, "videos are fetched successfully"))
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -20,7 +41,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     console.log("owner : ",owner)
     // TODO: get video, upload to cloudinary, create video
     if(!title || !description){
-        throw new ApiError(400, "title and description is reqired")
+        throw new ApiError(400, "title and description is required")
     }
 
     const videolocalpath = req.files?.videoFile?.[0]?.path;
@@ -32,7 +53,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const video = await uploadOnCloudinary(videolocalpath); 
 
     if(!video){
-        throw new ApiError(400, "video is requided")
+        throw new ApiError(400, "video is required")
     }
 
     const thumbinllocalpath = req.files?.thumbinl?.[0]?.path;
@@ -55,12 +76,12 @@ const publishAVideo = asyncHandler(async (req, res) => {
     })
 
     if(!video){
-        throw new ApiError(500, "Something went wrong while uploding video")
+        throw new ApiError(500, "Something went wrong while uploading video")
     }
 
     
     return res.status(201).json(
-        new ApiResponse(200, uploadvideo, "video uploded successfully")
+        new ApiResponse(200, uploadvideo, "video uploaded successfully")
     )
 })
 
