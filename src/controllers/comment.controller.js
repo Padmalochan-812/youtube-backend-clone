@@ -13,6 +13,14 @@ const getVideoComments = asyncHandler(async (req, res) => {
 
 const addComment = asyncHandler(async (req, res) => {
     // TODO: add a comment to a video
+
+    const {content} = req.body
+
+    if(!content) {
+        throw new ApiError (400, "Comment required")
+    }
+    
+
 })
 
 const updateComment = asyncHandler(async (req, res) => {

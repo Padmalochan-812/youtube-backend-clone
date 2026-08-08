@@ -1,25 +1,25 @@
-import { asyncHandler } from "../utilis/asyncHandler.js";
-import { ApiError } from "../utilis/ApiError.js"
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js"
 import {User} from "../models/user.model.js"
 import {upload} from "../middlewares/multer.middlewares.js"
-import {uploadOnCloudinary} from "../utilis/cloudinary.js"
-import { ApiResponse } from "../utilis/ApiRespons.js"
+import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 
-const generateAccessAndRefereshToken = async(userId) => {
+const generateAccessAndRefreshToken = async(userId) => {
     try{
         const user = await User.findById(userId)
         const accessToken  = user.generateAccessToken()
-        const refereshToken = user.generateRefreshToken()
+        const refreshToken = user.generateRefreshToken()
 
-        user.refereshToken = refereshToken
+        user.refreshToken = refreshToken
         await user.save({validateBeforeSave: false })
 
-        return {accessToken, refereshToken}
+        return {accessToken, refreshToken}
 
     } catch (error) {
         console.log(error)
-        throw new ApiError (500, "Somthing went wrong while generating referesh and access token")
+        throw new ApiError (500, "Something went wrong while generating refresh and access token")
     }
 }
 
@@ -32,7 +32,7 @@ const registerUser = asyncHandler( async (req, res) => {
     // checking cover images and a avatar 
     // upload images to cloudinary 
     // create user object - create entyr in db
-    // remove password and referesh token field from response
+    // remove password and refresh token field from response
     // check user creation 
     // return response
 
@@ -77,6 +77,7 @@ const registerUser = asyncHandler( async (req, res) => {
 
     if(!avatar) {
         throw new ApiError (400, "Avtar Image is required ")
+        
     }
 
     const user = await User.create({
@@ -93,7 +94,7 @@ const registerUser = asyncHandler( async (req, res) => {
     )
 
     if(!createdUser) {
-        throw new ApiError(500, "Somthing went wrong while registrting the user")
+        throw new ApiError(500, "Something went wrong while registrting the user")
     }
 
     return res.status(201).json(
@@ -110,7 +111,7 @@ const loginUser = asyncHandler( async (req, res ) => {
     //user name and email
     //find user 
     //password check
-    //access and referesh token
+    //access and refresh token
     //send coockies
     //send response
 
@@ -135,9 +136,9 @@ const loginUser = asyncHandler( async (req, res ) => {
         throw new ApiError(404, " invalid User credential ")
     }
 
-    const {accessToken, refereshToken} = await generateAccessAndRefereshToken(user._id)
+    const {accessToken, refreshToken} = await generateAccessAndRefreshToken(user._id)
 
-    const loggedInUser = await User.findById(user._id).select("-password -refereshToken")
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
     const options = {
         httpOnly : true,
@@ -147,7 +148,7 @@ const loginUser = asyncHandler( async (req, res ) => {
     return res
     .status(200)
     .cookie("accessToken", accessToken, options)
-    .cookie("refereshToken", refereshToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
         new ApiResponse(
             200,
@@ -165,7 +166,7 @@ const logoutUser = asyncHandler(async(req, res) => {
         req.user._id,
         {
             $unset: {
-                refereshToken: 1
+                refreshToken: 1
             }
         },
         {
@@ -181,31 +182,31 @@ const logoutUser = asyncHandler(async(req, res) => {
     return res
     .status(200)
     .clearCookie("accessToken", options)
-    .clearCookie("refereshToken", options)
+    .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User logged out"))
 })
 
-const refereshAccessToken = asyncHandler(async(req, res) => {
+const refreshAccessToken = asyncHandler(async(req, res) => {
     try {
-        const incomingRefereshToken = req.cookies.refereshToken || req.body.refereshToken
+        const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
     
-        if (!incomingRefereshToken) {
+        if (!incomingRefreshToken) {
             throw new ApiError(401, "Unauthorized request")
         }
     
         const decodedToken = jwt.verify(
-            incomingRefereshToken,
-            process.env.REFERESH_TOKEN_SECRET
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
         )
     
         const user = await User.findById(decodedToken?._id)
     
         if (!user) {
-            throw new ApiError (401, "Invalid referesh Token")
+            throw new ApiError (401, "Invalid refresh Token")
         }
 
-        if(incomingRefereshToken !== user?.refereshToken) {
-            throw new ApiError(401, "Referesh token is expire or used")
+        if(incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(401, "Refresh token is expire or used")
         }
     
         const options = {
@@ -213,22 +214,22 @@ const refereshAccessToken = asyncHandler(async(req, res) => {
             secure: true
         }
     
-        const {accessToken, newRefereshToken} = await generateAccessAndRefereshToken(user._id)
+        const {accessToken, newRefreshToken} = await generateAccessAndRefreshToken(user._id)
     
         return res
         .status(200)
         .cookie("accessToken", accessToken, options)
-        .cookie("refereshToken", newRefereshToken, options)
+        .cookie("refreshToken", newRefreshToken, options)
         .json(
             new ApiResponse(
                 200,
-                {accessToken, refereshToken: newRefereshToken},
-                "Access Token refereshd"
+                {accessToken, refreshToken: newRefreshToken},
+                "Access Token refreshed"
             )
         )
     } catch (error) {
 
-        throw new ApiError (401, error?.message || "Invalid referesh token")
+        throw new ApiError (401, error?.message || "Invalid refresh token")
         
     }
 
@@ -281,7 +282,7 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
             }
         },
         { returnDocument: "after" }
-    ).select("-password -refereshToken")
+    ).select("-password -refreshToken")
 
     
 
@@ -300,7 +301,7 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
     if(!avatar.url) {
-        throw new ApiError (400, "Error while uploding on avatar")
+        throw new ApiError (400, "Error while uploading on avatar")
     }
 
     const user = await User.findByIdAndUpdate(
@@ -311,7 +312,7 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
             }
         },
         { returnDocument: "after" }
-    ).select("-password -refereshToken")
+    ).select("-password -refreshToken")
 
     return res
     .status (200)
@@ -331,7 +332,7 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
     if(!coverImage.url) {
-        throw new ApiError (400, "Error while uploding on coverImage")
+        throw new ApiError (400, "Error while uploading on coverImage")
     }
 
     const user = await User.findByIdAndUpdate(
@@ -502,7 +503,7 @@ export {
     registerUser,
     loginUser,
     logoutUser,
-    refereshAccessToken,
+    refreshAccessToken,
     changeCurrentPassword,
     getCurrentUser,
     updateAccountDetails,
