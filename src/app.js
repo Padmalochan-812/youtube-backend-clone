@@ -23,7 +23,7 @@ import videoRouter from "./routes/video.route.js"
 
 //routes decleration
 app.use("/api/v1/users", userRouter)
-app.use("/api/v1/users", videoRouter)
+app.use("/api/v1/videos", videoRouter)
 
 //http://localhost:8000/api/v1/users/register
 
