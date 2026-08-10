@@ -7,9 +7,9 @@ const videoSchema = new Schema(
             type: String,
             require: true
         },
-        thumbinl: {
+        thumbnail: {
             type: String,
-            requre: true
+            require: true
         },
         title: {
             type: String,
@@ -18,17 +18,17 @@ const videoSchema = new Schema(
         description:
         {
             type: String,
-            reuqire: true
+            require: true
         },
         duration: {
             type: Number,
             default: 0
         },
-        idPlulished: {
+        ispublished: {
             type: Boolean,
-            defaule: false
+            default: false
         },                                       
-        woner: {
+        owner: {
             type: Schema.Types.ObjectId,
             ref: "User"
         }

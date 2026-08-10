@@ -7,6 +7,7 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 
+
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
@@ -56,12 +57,12 @@ const publishAVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "video is required")
     }
 
-    const thumbinllocalpath = req.files?.thumbinl?.[0]?.path;
+    const thumbnaillocalpath = req.files?.thumbnail?.[0]?.path;
     
-    const thumbinl = await uploadOnCloudinary(thumbinllocalpath)
+    const thumbnail = await uploadOnCloudinary(thumbnaillocalpath)
 
-    if(!thumbinl) {
-        throw new ApiError(400, "thumbinl is required")
+    if(!thumbnail) {
+        throw new ApiError(400, "Thumbnail is required")
     }
      
     const uploadvideo =await Video.create({
@@ -69,8 +70,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         videoFilePublicId: video.public_id,
         title: title,
         description: description,
-        thumbinl: thumbinl.secure_url,
-        thumbinlPublicId: thumbinl.public_id,
+        thumbnail: thumbnail.secure_url,
+        thumbnailPublicId: thumbnail.public_id,
         duration: video.duration,
         owner: owner
     })
@@ -88,13 +89,66 @@ const publishAVideo = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: get video by id
+    const video = await Video.findById(videoId)
+
+    if (!video){
+        throw new ApiError(400, "there is no such video")
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse (200, video, "video fetched successfully by Id"))
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: update video details like title, description, thumbnail
+    const { title, description } = req.body
 
-})
+    const newThumbnailFilePath = req.files?.thumbnail?.[0]?.path;
+    if (!newThumbnailFilePath){
+        throw new ApiError(400, "Thumbnail is no provided")
+
+    }
+
+    const video = await Video.findById(videoId)
+    if (!video){
+        throw new ApiError(400, "Video not found")
+    }
+
+    const newThumbnail = await uploadOnCloudinary(newThumbnailFilePath)
+
+    if (!newThumbnail){
+        throw new ApiError(400, "Failed to upload new thumbnail..");
+    }
+
+    if (video?.thumbnailPublicId) {
+        try {
+            await uploadOnCloudinary.uploader.destroy(video.thumbnailPublicId, {resource_type: "image"});
+        }
+        catch(error) {
+            throw new ApiError(500, error.message, "Failed to delete old Thumbnail image")
+        }
+    }
+    const updates = {}
+    if (title) updates.title = title;
+    if (description) updates.description = description;
+    updates.thumbnail = newThumbnail.secure_url;
+    updates.thumbnailPublicId = newThumbnail.public_id;
+
+    const updatedVideo = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $set: updates
+        },
+        { returnDocument: "after" }
+    );
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedVideo, "Video updated successfully..")
+    )
+
+});
 
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
