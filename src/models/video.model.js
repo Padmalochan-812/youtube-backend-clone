@@ -7,9 +7,15 @@ const videoSchema = new Schema(
             type: String,
             require: true
         },
+        videoFilePublicId: {
+            type: String
+        },
         thumbnail: {
             type: String,
             require: true
+        },
+        thumbnailPublicId: {
+            type: String
         },
         title: {
             type: String,
@@ -24,7 +30,7 @@ const videoSchema = new Schema(
             type: Number,
             default: 0
         },
-        ispublished: {
+        isPublished: {
             type: Boolean,
             default: false
         },                                       
