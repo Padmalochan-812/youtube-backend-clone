@@ -8,10 +8,11 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+    const { page = 1, limit = 10, query, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
     const sortBy = req.query.sortBy || "createdAt";
     const sortType = req.query.sortType === "asc" ? 1 : -1;
+
     const filter = {};
     
     if (userId) filter.owner = userId;
@@ -38,7 +39,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const { title, description} = req.body
     
     const owner = req.user._id
-    console.log("owner : ",owner)
     // TODO: get video, upload to cloudinary, create video
     if(!title || !description){
         throw new ApiError(400, "title and description is required")
@@ -80,7 +80,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     }
 
     
-    return res.status(201).json(
+    return res.status(200).json(
         new ApiResponse(200, uploadvideo, "video uploaded successfully")
     )
 })
