@@ -21,7 +21,7 @@ router.route("/publishavideo").post(
     ]),
     publishAVideo
 )
-router.route("/getallvideos").get(verifyJWT, getAllVideos)
+router.route("/get-all-videos").get(verifyJWT, getAllVideos)
 
 router.route("/one-video/:videoId").get(verifyJWT, getVideoById)
 
@@ -38,6 +38,6 @@ router.route("/update-video/:videoId").patch(
 
 router.route("/delete-video/:videoId").post(verifyJWT, deleteVideo)
 
-router.route("/togglePublishStatus/:videoId").post(verifyJWT, togglePublishStatus)
+router.route("/toggle-publish-status/:videoId").post(verifyJWT, togglePublishStatus)
 
 export default router ;
