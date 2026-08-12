@@ -1,15 +1,18 @@
-import mongoose, {isValidObjectId} from "mongoose"
+import { isValidObjectId } from "mongoose"
 import {Like} from "../models/like.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import{Video} from "../models/video.model.js"
+import {Video} from "../models/video.model.js"
 import {Comment} from "../models/comments.model.js"
-
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const {videoId} = req.params;
-    //TODO: toggle like on video
+
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid video id");
+    }
+
     const userId = req.user._id;
 
     const video = await Video.findById(videoId)
@@ -47,8 +50,8 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     const {commentId} = req.params
     //TODO: toggle like on comment
 
-    const userId = res.user._id
-
+    const userId = req.user._id
+    
     const comment = await Comment.findById(commentId);
     if(!comment){
         throw new ApiError(404, "comment not found..")
@@ -83,7 +86,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 const toggleTweetLike = asyncHandler(async (req, res) => {
     const {tweetId} = req.params
     //TODO: toggle like on tweet
-    const userId = res.user._id
+    const userId = req.user._id
 
     const tweet = await Tweet.findById(tweetId)
     if (!tweet){
@@ -110,28 +113,26 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     });
 
     return res.status(200).json(
-        new apiResponse(200, null, "Like the tweet..")
+        new ApiResponse(200, null, "Like the tweet..")
     )
 
 });
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    //TODO: get all liked videos
-    const userId = res.user._id;
 
-    const videos = await Like.find({user: userId}).populate("user", "userName", "email");
-    if (videos.length === 0 ){
-        throw new ApiError(404, "No video found..")
-    }
+    console.log(`Fetching liked videos for user ${req.user._id}`);
+    const userId = req.user._id;
+
+    const videos = await Like.find({ user: userId }).populate("video");
 
     return res.status(200).json(
-        new apiResponse(200, videos, "Liked videos fetched successfully")
+        new ApiResponse(200, videos, "Liked videos fetched successfully")
     )
 })
 
 export {
+    toggleVideoLike,
     toggleCommentLike,
     toggleTweetLike,
-    toggleVideoLike,
     getLikedVideos
 }

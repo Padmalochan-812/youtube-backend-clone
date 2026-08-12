@@ -30,6 +30,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     if (!videos) {
         throw new ApiError (400, "There is no such videos..")
     }
+    
 
     return res
         .status(200)
