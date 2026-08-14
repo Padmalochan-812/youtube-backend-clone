@@ -10,6 +10,10 @@ import videoRouter from "./routes/video.route.js";
 import commentRouter from "./routes/comment.route.js";
 import likeRouter from "./routes/like.route.js";
 import tweetRoute from "./routes/tweet.route.js";
+import playlistRoute from "./routes/playlist.route.js";
+import dashboardRoute from "./routes/dashboard.route.js";
+import subscriptionRoute  from "./routes/subscription.route.js";
+import  healthcheckRoute from "./routes/healthcheck.route.js";
 
 
 const app = express()
@@ -31,6 +35,10 @@ app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/like", likeRouter);
 app.use("/api/v1/tweet", tweetRoute);
+app.use("/api/v1/playlist", playlistRoute);
+app.use("/api/v1/dashboard", dashboardRoute);
+app.use("/api/v1/subscription", subscriptionRoute);
+app.use("/api/v1/health", healthcheckRoute);
 
 app.use((err, req, res, next) => {
    console.error(`${req.method} ${req.originalUrl} failed:`, err.message);
