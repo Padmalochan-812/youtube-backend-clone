@@ -4,10 +4,11 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {Video} from "../models/video.model.js"
-
+import{User} from "../models/user.model.js"
 
 const createPlaylist = asyncHandler(async (req, res) => {
     const {name, description} = req.body
+    const userId  = req.user._id
 
     //TODO: create playlist
     if (!name || !description){
@@ -17,9 +18,9 @@ const createPlaylist = asyncHandler(async (req, res) => {
     const playlist = await Playlist.create({
         name, 
         description,
-        owner = req.user._id
+        owner: userId
     })
-
+    
     return res.status(200).json(
         new ApiResponse(200, playlist, "playlist crated successfully..")
     )
@@ -27,6 +28,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
     const {userId} = req.params
+    
     //TODO: get user playlists
     const user = await User.findById(userId)
     if (!user){
@@ -34,7 +36,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     }
     
     const playlist = await Playlist.find({owner: userId});
-
+    
     if(playlist.length ===0 ){
         throw new ApiError(404, "User has not created any playlist..")
     }
@@ -42,7 +44,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     return res.status(200).json(
         new ApiResponse(200, playlist, "Playlist fetched successfully..")
     )
-})
+});
 
 const getPlaylistById = asyncHandler(async (req, res) => {
     const {playlistId} = req.params
@@ -60,7 +62,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
     const {playlistId, videoId} = req.params
-
+    
     const video = await Video.findById(videoId);
     if(!video){
         throw new ApiError(404, "video not found..")
@@ -70,13 +72,13 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     if(!playlist){
         throw new ApiError(404, "Playlist not found..")
     }
-
+    
     if(playlist.videos.includes(videoId)) {
         throw new ApiError(400, "This video is in your playlist..");
     }
 
     const updatePlaylist = await Playlist.findOneAndUpdate(
-        playlistId,
+        { _id: playlistId },
         {$push: 
             {
                 videos: videoId
@@ -87,7 +89,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     if (!updatePlaylist){
         new ApiError(404, "Video not added in the playlist..")
     }
-
+    
     return res.status(200).json(
         new ApiResponse(200, updatePlaylist, "video added in the playlist..")
     );
@@ -107,7 +109,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     }
 
     const updatePlaylist = await Playlist.findByIdAndUpdate(
-        playlistId,
+        { _id: playlistId },
         {$pull:
             {
                 videos: videoId
@@ -116,22 +118,27 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
         {returnDocument: "after"}
     );
 
+    return res.status(200).json(
+        new ApiResponse(200, updatePlaylist, "video remove from the playlist..")
+    )
+
 });
 
 const deletePlaylist = asyncHandler(async (req, res) => {
     const {playlistId} = req.params
     // TODO: delete playlist
-    const playlist = await findById(playlistId)
+    console.log(playlistId)
+    const playlist = await Playlist.findById(playlistId)
     if(!playlist){
         throw new ApiError(404, "Playlist not found..")
     }
-
+    console.log(playlist)
     await Playlist.findByIdAndDelete(playlistId);
 
     return res.status(200).json(
         new ApiResponse(200, "", "Playlist deleted successfully..")
     )
-})
+});
 
 const updatePlaylist = asyncHandler(async (req, res) => {
     const {playlistId} = req.params
@@ -153,9 +160,9 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     );
 
     return res.status(200).json(
-        new ApiResponse(200, updatePlaylist, "Updated Playlist successfully..")
+        new ApiResponse(200, updatedPlaylist, "Updated Playlist successfully..")
     )
-})
+});
 
 export {
     createPlaylist,
